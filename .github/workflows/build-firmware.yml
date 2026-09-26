@@ -21,12 +21,11 @@ name: Build & Attach Firmware Binaries
 on:
   release:
     types: [published]
-  workflow_dispatch: # permet aussi un déclenchement manuel pour tester
+  workflow_dispatch:
 
 env:
   FQBN: esp32:esp32:esp32
-  SKETCH_DIR: firmware/esp32_linge # <-- à adapter : dossier contenant esp32_linge.ino
-
+  SKETCH_DIR: esp32_linge
 jobs:
   build:
     runs-on: ubuntu-latest
