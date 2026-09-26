@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Traçabilité du linge</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+
+<body>
+    <header class="topbar">
+        <h1>Pannier de linge</h1>
+        <div class="stats"><span><b id="total">0</b> habits</span><span><b id="present">0</b> détectés</span><span><i
+                    id="dot" class="dot"></i><span id="connection">Connexion…</span></span></div><a
+            href="/admin">Gestion →</a>
+    </header>
+    <main class="dashboard">
+        <section class="panel scan-card">
+            <p class="muted">DERNIER ARTICLE SCANNÉ :</p>
+            <div id="empty">Attente de l'ajout d'un habit...</div>
+            <div id="scan" hidden>
+                <h2 id="scan-name"></h2>
+                <p id="scan-meta" class="muted"></p>
+            </div>
+        </section>
+        <section class="panel">
+            <div class="section-heading">
+                <h2>Machines suggérées</h2>
+                <button id="empty-basket">Vider le panier</button>
+            </div>
+            <div id="suggestions" class="suggestions"></div>
+            <h2>Historique récent</h2>
+            <div id="history" class="history"></div>
+        </section>
+    </main>
+    <script src="/static/dashboard.js"></script>
+</body>
+
+</html>

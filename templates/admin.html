@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gestion du linge</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <header class="topbar"><a href="/">← Tableau de bord</a><h1>Gestion du linge</h1><button id="add-mode">+ Ajout</button></header>
+  <main class="admin-layout">
+    <section class="panel">
+      <div class="section-heading"><h2>Habits enregistrés</h2><span id="count"></span></div>
+      <div id="habit-list" class="habit-list"></div>
+    </section>
+    <section class="panel form-panel">
+      <h2 id="form-title">Ajouter un habit</h2>
+      <p id="mode-message" class="notice" hidden>Mode Ajout : ne rien ajouter dans le panier à linge.</p>
+      <form id="habit-form">
+        <input type="hidden" id="habit-id">
+        <label>EPC <input id="epc" required placeholder="E280..."></label>
+        <label>Nom lisible <input id="nom" required></label>
+        <div class="form-grid">
+          <label>Type <input id="type" required placeholder="T-shirt"></label>
+          <label>Couleur <input id="couleur" required></label>
+          <label>Température (°C) <input id="temperature" type="number" min="0" max="100" step="10" required></label>
+          <label>Matière <input id="matiere" required placeholder="Coton"></label>
+          <label>Propriétaire <input id="proprietaire" required placeholder="Personne 1"></label>
+          <label>Dernier lavage <input id="date_dernier_lavage" type="date"></label>
+        </div>
+        <label>Instructions supplémentaires <textarea id="instructions" rows="3" placeholder="Ne pas laver en machine"></textarea></label>
+        <div class="actions"><button class="primary" type="submit">Enregistrer</button><button type="button" id="cancel">Annuler</button></div>
+        <p id="form-error" class="error" role="alert"></p>
+      </form>
+    </section>
+  </main>
+  <script src="/static/admin.js"></script>
+</body>
+</html>
