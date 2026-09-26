@@ -21,14 +21,17 @@ name: Build & Attach Firmware Binaries
 on:
   release:
     types: [published]
-  workflow_dispatch:
+  workflow_dispatch: # permet aussi un déclenchement manuel pour tester
 
 env:
   FQBN: esp32:esp32:esp32
-  SKETCH_DIR: esp32_linge
+  SKETCH_DIR: esp32_linge # <-- à adapter : dossier contenant esp32_linge.ino
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # nécessaire pour attacher des fichiers à la release
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
@@ -54,22 +57,15 @@ jobs:
             "${{ env.SKETCH_DIR }}"
           ls -la build
 
-      - name: Fusionner en un seul binaire flashable
+      - name: Récupérer le binaire fusionné
+        # arduino-cli (core esp32 récent) produit déjà, avec --export-binaries,
+        # un binaire "*.ino.merged.bin" qui contient bootloader + partitions +
+        # boot_app0 + application, prêt à être flashé directement à l'adresse
+        # 0x0. Pas besoin de refaire la fusion à la main avec esptool.
         run: |
-          pip install --quiet esptool
-          BOOT_APP0=$(find / -name "boot_app0.bin" -path "*esp32*" 2>/dev/null | head -n1)
-          echo "boot_app0.bin trouvé : $BOOT_APP0"
-          APP_BIN=$(find build -name "*.ino.bin" | head -n1)
-          BOOTLOADER_BIN=$(find build -name "*.ino.bootloader.bin" | head -n1)
-          PARTITIONS_BIN=$(find build -name "*.ino.partitions.bin" | head -n1)
-
-          python3 -m esptool --chip esp32 merge_bin \
-            -o esp32_linge_merged.bin \
-            --flash_mode dio --flash_freq 40m --flash_size 4MB \
-            0x1000  "$BOOTLOADER_BIN" \
-            0x8000  "$PARTITIONS_BIN" \
-            0xe000  "$BOOT_APP0" \
-            0x10000 "$APP_BIN"
+          MERGED_BIN=$(find build -name "*.ino.merged.bin" | head -n1)
+          cp "$MERGED_BIN" esp32_linge_merged.bin
+          ls -la esp32_linge_merged.bin
 
       - name: Attacher les binaires à la release
         uses: softprops/action-gh-release@v2
