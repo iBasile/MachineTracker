@@ -1,0 +1,79 @@
+# Fichier à placer dans le dépôt GitHub sous : .github/workflows/build-firmware.yml
+#
+# Ce workflow se déclenche à chaque publication de release GitHub.
+# Il compile esp32_linge.ino avec arduino-cli (cible esp32:esp32:esp32,
+# soit "ESP32 Dev Module" — c'est aussi la cible générique qui fonctionne
+# pour une carte Olimex ESP32-PoE : le chip est le même ESP32, seule
+# l'affectation des broches change, ce qui n'a pas d'impact sur la
+# compilation tant que le sketch n'utilise pas une variante de carte
+# spécifique). Il fusionne bootloader + table de partitions + boot_app0
+# + application en UN SEUL fichier .bin flashable à l'adresse 0x0, et
+# l'attache à la release à côté du .ino.
+#
+# Adapter si besoin :
+#   - SKETCH_DIR : le nom du dossier contenant esp32_linge.ino
+#                  (Arduino exige que le dossier et le .ino aient le même nom)
+#   - FQBN       : cible de compilation (ex: esp32:esp32:esp32 -> à changer
+#                  si vous passez un jour sur une carte avec un FQBN dédié)
+
+name: Build & Attach Firmware Binaries
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # permet aussi un déclenchement manuel pour tester
+
+env:
+  FQBN: esp32:esp32:esp32
+  SKETCH_DIR: firmware/esp32_linge # <-- à adapter : dossier contenant esp32_linge.ino
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Installer le core ESP32
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls \
+            https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+
+      - name: Compiler le sketch
+        run: |
+          mkdir -p build
+          arduino-cli compile \
+            --fqbn "${{ env.FQBN }}" \
+            --export-binaries \
+            --output-dir build \
+            "${{ env.SKETCH_DIR }}"
+          ls -la build
+
+      - name: Fusionner en un seul binaire flashable
+        run: |
+          pip install --quiet esptool
+          BOOT_APP0=$(find / -name "boot_app0.bin" -path "*esp32*" 2>/dev/null | head -n1)
+          echo "boot_app0.bin trouvé : $BOOT_APP0"
+          APP_BIN=$(find build -name "*.ino.bin" | head -n1)
+          BOOTLOADER_BIN=$(find build -name "*.ino.bootloader.bin" | head -n1)
+          PARTITIONS_BIN=$(find build -name "*.ino.partitions.bin" | head -n1)
+
+          python3 -m esptool --chip esp32 merge_bin \
+            -o esp32_linge_merged.bin \
+            --flash_mode dio --flash_freq 40m --flash_size 4MB \
+            0x1000  "$BOOTLOADER_BIN" \
+            0x8000  "$PARTITIONS_BIN" \
+            0xe000  "$BOOT_APP0" \
+            0x10000 "$APP_BIN"
+
+      - name: Attacher les binaires à la release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            esp32_linge_merged.bin
